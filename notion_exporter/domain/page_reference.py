@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 
 @dataclass(frozen=True)
@@ -30,7 +30,14 @@ def dashify_page_id(raw_id: str) -> str:
 
 
 def page_id_from_url(url: str) -> str:
-    path = urlparse(url).path.rstrip("/")
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    for param in ("p", "page_id"):
+        for value in query.get(param, []):
+            if re.fullmatch(r"[0-9a-fA-F-]{32,36}", value):
+                return dashify_page_id(value)
+
+    path = parsed.path.rstrip("/")
     match = re.search(r"([0-9a-fA-F]{32})$", path)
     if not match:
         raise ValueError(f"Could not find a Notion page id at the end of {url!r}")

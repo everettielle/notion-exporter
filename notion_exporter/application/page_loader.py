@@ -73,10 +73,13 @@ class PublicPageLoader:
                 merge_record_map(blocks, data.get("recordMap", {}))
                 loaded_subtrees.add(block_id)
 
-            desired_ids.update(
-                child_id
-                for block_id in list(desired_ids)
-                for child_id in block_children(blocks.get(block_id, {}))
-            )
+            changed = True
+            while changed:
+                changed = False
+                for block_id in list(desired_ids):
+                    for child_id in block_children(blocks.get(block_id, {})):
+                        if child_id not in desired_ids:
+                            desired_ids.add(child_id)
+                            changed = True
 
         return {block_id: blocks[block_id] for block_id in desired_ids if block_id in blocks}
